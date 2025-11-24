@@ -3,129 +3,111 @@
 import java.io.File
 import kotlin.random.Random
 
-class Wordle{
-        
-    fun isValid(word:String): Boolean {
-        val guess=word.lowercase()
-        
-        // must be 5 letters
-        if (guess.length!=5) return false
+// constant for word length to avoid magic numbers
+private const val WORD_LENGTH = 5
+
+class Wordle {
+    // Checks if a word is valid: must be 5 letters and alphabetic only
+    fun isValid(word: String): Boolean {
+        val guess = word.lowercase()
+
+        // check length
+        val correctLength = guess.length == WORD_LENGTH
 
         // check letters only
-        for (c in guess){
-            if(!c.isLetter()) return false
-        }
+        val allLetters = guess.all { it.isLetter() }
 
-        return true
+        // one combined return to satisfy detekt
+        return correctLength && allLetters
     }
 
+    // Reads a list of words from a text file
     fun readWordList(filename: String): MutableList<String> {
-        // Create a File object
         val file = File(filename)
-
-        // Read all lines in the file
         val words = file.readLines()
-
-        // Convert the List into a MutableList
         return words.toMutableList()
     }
 
+    // Picks a random word and removes it from the list
     fun pickRandomWord(words: MutableList<String>): String {
-        // random index
         val index = Random.nextInt(words.size)
-
-        // Get the word
         val selectedWord = words[index]
-
-        // Remove it from the list
         words.removeAt(index)
-
         return selectedWord
     }
 
+    // Keeps asking until the user enters a valid guess
     fun obtainGuess(attempt: Int): String {
-    while (true) {
+        while (true) {
+            // prompt user
+            println("Attempt $attempt: ")
 
-        // Print prompt
-        println("Attempt $attempt: ")
+            val guess = readln()
 
-        // Read user input
-        val guess = readln()
+            // return if valid
+            if (isValid(guess)) {
+                return guess
+            }
 
-        // Check if it's valid
-        if (isValid(guess)) {
-            return guess
+            // otherwise show error
+            println("Invalid guess. Please try again.")
         }
-
-        // If invalid, print mesage and ask again
-        println("Invalid guess.Please try again.")
     }
-}
 
-
+    // Compares the guess with the target and returns match results
     fun evaluateGuess(guess: String, target: String): List<Int> {
-        
-        // Create a list to store the results
-        val results = MutableList(5) { 0 }
+        // stores results: 0=wrong, 1=wrong spot, 2=correct spot
+        val results = MutableList(WORD_LENGTH) { 0 }
 
-        // Convert both guess and target to uppercase
-            val g = guess.uppercase()
-            val t = target.uppercase()
+        // make uppercase for easier comparison
+        val g = guess.uppercase()
+        val t = target.uppercase()
 
-        // Count how many times each letter appears in the target word
+        // count letters in target
         val letterCounts = mutableMapOf<Char, Int>()
         for (ch in t) {
             letterCounts[ch] = letterCounts.getOrDefault(ch, 0) + 1
         }
 
-        // correct position matches (2)
-            for (i in 0 until 5) {
-                if (g[i] == t[i]) {
-                    results[i] = 2
-                    letterCounts[g[i]] = letterCounts[g[i]]!! - 1
-                }
+        // mark exact matches (2)
+        for (i in 0 until WORD_LENGTH) {
+            if (g[i] == t[i]) {
+                results[i] = 2
+                letterCounts[g[i]] = letterCounts[g[i]]!! - 1
             }
+        }
 
-         // wrong position matches (1)
-        for (i in 0 until 5) {
-            if (results[i] == 0) {   // only check letters NOT already matched
+        // mark wrong-place matches (1)
+        for (i in 0 until WORD_LENGTH) {
+            if (results[i] == 0) {
                 val ch = g[i]
                 if (letterCounts.getOrDefault(ch, 0) > 0) {
                     results[i] = 1
                     letterCounts[ch] = letterCounts[ch]!! - 1
-                    }
                 }
             }
+        }
 
         return results
     }
 
-    
-    
+    // Displays guess letters with colours (green/yellow/grey)
     fun displayGuess(guess: String, matches: List<Int>) {
-
+        // Add a blank line before display
         println()
 
         // Loop through each of the 5 letters in the guess
-        for (i in 0 until 5) {
+        for (i in 0 until WORD_LENGTH) {
             val ch = guess[i].uppercase()
 
-        // Check the match result for this position
+            // Check the match result for this position
             when (matches[i]) {
-
-                // 2 → correct position → green
-                2 -> print("\u001B[32m$ch\u001B[0m")
-
-                // 1 → wrong position but letter exists → yellow
-                1 -> print("\u001B[33m$ch\u001B[0m")
-
-                // 0 → letter not in target → grey
-                else -> print("\u001B[90m$ch\u001B[0m")
+                2 -> print("\u001B[32m$ch\u001B[0m") // green
+                1 -> print("\u001B[33m$ch\u001B[0m") // yellow
+                else -> print("\u001B[90m$ch\u001B[0m") // grey
             }
         }
 
+        println()
     }
-
-
-
 }
