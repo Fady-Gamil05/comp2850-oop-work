@@ -17,7 +17,6 @@ class Wordle {
         // check letters only
         val allLetters = guess.all { it.isLetter() }
 
-        // one combined return to satisfy detekt
         return correctLength && allLetters
     }
 
@@ -93,7 +92,6 @@ class Wordle {
 
     // Displays guess letters with colours (green/yellow/grey)
     fun displayGuess(guess: String, matches: List<Int>) {
-        // Add a blank line before display
         println()
 
         // Loop through each of the 5 letters in the guess
